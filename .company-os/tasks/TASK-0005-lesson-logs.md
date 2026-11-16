@@ -4,7 +4,7 @@
 |-------|-------|
 | Task ID | TASK-0005 |
 | Type | Feature |
-| Status | In Progress |
+| Status | Done |
 | Assignee Role | Backend / Frontend |
 | Workflow | create-feature |
 | Product | open-class |
@@ -20,12 +20,12 @@ Add student-specific lesson logs attached to real lesson sessions, with role-sco
 
 ## Acceptance Criteria
 
-- [ ] A teacher can create and update a log only for an assigned session participant.
-- [ ] Admins can view academy logs; teachers and students see only their own records.
-- [ ] Logs support course, teacher, student, date range and keyword filters.
-- [ ] Student timeline and teacher/course log views use live API data.
-- [ ] Tenant isolation and authorization tests pass.
+- [x] A teacher can create and update a log only for an assigned session participant.
+- [x] Admins can view academy logs; teachers and students see only their own records.
+- [x] Logs support course, teacher, student, date range and keyword filters.
+- [x] Student timeline and teacher/course log views use live API data.
+- [x] Tenant isolation and authorization tests pass (9 backend tests).
 
 ## Definition of Done
 
-- [ ] Migration, API, UI, tests and docs verified.
+- [x] Migration, API, UI, tests and docs verified; Alembic 0005 is head, API/DB health is OK, frontend build succeeds.
