@@ -1,6 +1,6 @@
 # open-class
 
-학원의 선생님, 학생, 수업, 시간표와 학생별 수업 일지를 관리하는 멀티테넌트 SaaS입니다. **Phase 1~6 기반 구성, 인증·권한, 기본 데이터 관리, 반복 시간표, 개별 수업 회차, 학생별 수업 일지, 통합 검색과 운영 대시보드**를 구현했습니다.
+학원의 선생님, 학생, 수업, 시간표와 학생별 수업 일지를 관리하는 멀티테넌트 SaaS입니다. **Phase 1~7 기반 구성, 인증·권한, 기본 데이터 관리, 반복 시간표, 개별 수업 회차, 학생별 수업 일지, 통합 검색·대시보드, 로컬 실행·권한 검증**을 구현했습니다.
 
 ## 기술 구성
 
@@ -32,6 +32,15 @@ docker compose exec backend python -m app.seed
 
 로그인 API는 JWT를 HTTP-only, SameSite 쿠키로 전달하고, `/api/v1/auth/me`에서 서버가 현재 계정과 역할을 확인합니다. 학원 관리자 데이터 조회는 본인 학원 범위로 제한됩니다.
 
+백엔드 권한·테넌트 테스트와 프런트엔드 프로덕션 빌드는 다음 명령으로 확인합니다.
+
+```bash
+docker compose exec backend pytest -q
+docker compose exec frontend npm run build
+```
+
+실서비스 배포에서는 `APP_ENV`를 `production`으로 지정하고, `JWT_SECRET_KEY`와 PostgreSQL 자격 증명을 별도의 강한 비밀값으로 설정해야 합니다. 비개발 환경에서 개발 기본 JWT 키를 사용하면 API가 시작되지 않습니다.
+
 ## 단계별 계획
 
 1. 기반 구성: Compose, React/FastAPI, PostgreSQL, Alembic, 공통 API 연결
@@ -40,6 +49,6 @@ docker compose exec backend python -m app.seed
 4. 시간표: 반복 규칙, 세션 생성, 주간 보기, 중복 검증 (완료)
 5. 수업 일지: 수업·학생·선생님 단위 기록과 조회 (완료)
 6. 검색 및 대시보드: 조합 검색, 통계, 미작성 일지 (완료)
-7. 품질 완성: 권한/격리 검증, 문서와 운영 준비
+7. 품질 완성: 권한/격리 검증, 문서와 운영 준비 (완료)
 
 상세 PRD, 설계, 결정 기록과 진행 태스크는 [Company OS](.company-os/README.md)의 `projects/open-class/` 및 `tasks/`에서 관리합니다.
