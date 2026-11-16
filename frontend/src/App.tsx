@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, ChevronDown, GraduationCap, LayoutDashboard, Se
 import { useLocation, useNavigate } from 'react-router-dom'
 import ManagementPage, { type DataKind } from './features/academy-data/ManagementPage'
 import SchedulePage from './features/schedules/SchedulePage'
+import LessonLogsPage from './features/lesson-logs/LessonLogsPage'
 
 const navigation = [
   { label: '대시보드', icon: LayoutDashboard, path: '/' },
@@ -10,10 +11,10 @@ const navigation = [
   { label: '선생님', icon: Users, path: '/teachers' },
   { label: '학생', icon: GraduationCap, path: '/students' },
   { label: '수업', icon: BookOpen, path: '/courses' },
-  { label: '수업 일지', icon: BookOpen },
+  { label: '수업 일지', icon: BookOpen, path: '/lesson-logs' },
 ]
 const dataPages: Record<string, DataKind> = { '/teachers': 'teachers', '/students': 'students', '/subjects': 'subjects', '/courses': 'courses', '/enrollments': 'enrollments' }
-const routeTitles: Record<string, string> = { '/': '대시보드', '/schedules': '시간표', '/teachers': '선생님', '/students': '학생', '/subjects': '과목', '/courses': '수업', '/enrollments': '수강 등록' }
+const routeTitles: Record<string, string> = { '/': '대시보드', '/schedules': '시간표', '/lesson-logs': '수업 일지', '/teachers': '선생님', '/students': '학생', '/subjects': '과목', '/courses': '수업', '/enrollments': '수강 등록' }
 
 type Account = { id: string; academy_id: string | null; academy_name: string | null; email: string; name: string; role: 'SUPER_ADMIN' | 'ACADEMY_ADMIN' | 'TEACHER' | 'STUDENT'; is_active: boolean }
 const apiBase = import.meta.env.VITE_API_URL ?? '/api/v1'
@@ -29,6 +30,7 @@ export default function App() {
   const [loginPending, setLoginPending] = useState(false)
   const page = dataPages[location.pathname]
   const schedulePage = location.pathname === '/schedules'
+  const lessonLogsPage = location.pathname === '/lesson-logs'
 
   useEffect(() => {
     fetch(`${apiBase}/health`).then((response) => {
@@ -85,9 +87,9 @@ export default function App() {
     <main className="main-area">
       <header className="topbar"><div className="breadcrumb"><span>{account.academy_name ?? 'Open Class'}</span><b>/</b><strong>{routeTitles[location.pathname] ?? '대시보드'}</strong></div><div className="top-actions"><button className="search-button" disabled><Search size={15}/><span>검색</span><kbd>⌘ K</kbd></button><span className={`api-pill ${apiStatus}`}>{apiStatus==='connected'?<Wifi size={14}/>:<WifiOff size={14}/>} {apiStatus==='connected'?'API 연결됨':apiStatus==='error'?'API 연결 안 됨':'API 확인 중'}</span><button className="top-avatar" onClick={logout} aria-label="로그아웃" title="로그아웃">{account.name.slice(0,1)}</button></div></header>
       <div className="page-content">
-        {page ? <ManagementPage kind={page} role={account.role}/> : schedulePage ? <SchedulePage role={account.role}/> : <><div className="page-heading"><div><p className="eyebrow">OPEN-CLASS WORKSPACE</p><h1>학원 운영을 한 곳에서</h1><p className="heading-subtitle">수업과 학습 기록을 차근차근 관리해 보세요.</p></div><button className="primary-button" onClick={() => navigate('/courses')}>＋ 수업 관리</button></div>
+        {page ? <ManagementPage kind={page} role={account.role}/> : schedulePage ? <SchedulePage role={account.role}/> : lessonLogsPage ? <LessonLogsPage role={account.role}/> : <><div className="page-heading"><div><p className="eyebrow">OPEN-CLASS WORKSPACE</p><h1>학원 운영을 한 곳에서</h1><p className="heading-subtitle">수업과 학습 기록을 차근차근 관리해 보세요.</p></div><button className="primary-button" onClick={() => navigate('/courses')}>＋ 수업 관리</button></div>
           <section className="welcome-panel"><div className="welcome-icon"><BookOpen size={22}/></div><div><span className="section-label">{roleNames[account.role]} 워크스페이스</span><h2>{account.name}님, 환영합니다</h2><p>학원 수업과 학습 기록을 이 공간에서 관리할 수 있습니다. 오늘부터 선생님·학생·수업 정보를 등록할 수 있습니다.</p></div><div className={`connection-card ${apiStatus}`}><span className="connection-dot"/><div><strong>{apiStatus==='connected'?'서비스 정상 연결':apiStatus==='error'?'연결을 확인해 주세요':'연결 확인 중'}</strong><small>{apiStatus==='connected'?'백엔드 API · PostgreSQL':apiStatus==='error'?'백엔드 또는 데이터베이스에 연결할 수 없습니다':'백엔드 상태 확인 중'}</small></div></div></section>
-          <section className="modules-section"><div className="section-heading"><div><h2>워크스페이스</h2><p>등록된 학원 데이터를 API에서 불러옵니다.</p></div></div><div className="module-grid"><button className="module-card module-card-button" onClick={() => navigate('/schedules')}><span className="module-icon tint-0"><CalendarDays size={18}/></span><strong>시간표</strong><span className="module-caption">주간 반복 수업 및 회차</span><span className="module-arrow">→</span></button>{navigation.slice(2,5).map(({label,icon:Icon,path},index)=><button className="module-card module-card-button" onClick={() => path && navigate(path)} key={label}><span className={`module-icon tint-${index+1}`}><Icon size={18}/></span><strong>{label}</strong><span className="module-caption">목록 및 등록</span><span className="module-arrow">→</span></button>)}<button className="module-card module-card-button" onClick={() => navigate('/subjects')}><span className="module-icon tint-4"><BookOpen size={18}/></span><strong>과목</strong><span className="module-caption">과목 목록 및 관리</span><span className="module-arrow">→</span></button><button className="module-card module-card-button" onClick={() => navigate('/enrollments')}><span className="module-icon tint-2"><GraduationCap size={18}/></span><strong>수강 등록</strong><span className="module-caption">학생과 수업 연결</span><span className="module-arrow">→</span></button><article className="module-card"><span className="module-icon tint-3"><BookOpen size={18}/></span><strong>수업 일지</strong><span className="module-caption">다음 개발 단계</span></article></div></section>
+          <section className="modules-section"><div className="section-heading"><div><h2>워크스페이스</h2><p>등록된 학원 데이터를 API에서 불러옵니다.</p></div></div><div className="module-grid"><button className="module-card module-card-button" onClick={() => navigate('/schedules')}><span className="module-icon tint-0"><CalendarDays size={18}/></span><strong>시간표</strong><span className="module-caption">주간 반복 수업 및 회차</span><span className="module-arrow">→</span></button>{navigation.slice(2,5).map(({label,icon:Icon,path},index)=><button className="module-card module-card-button" onClick={() => path && navigate(path)} key={label}><span className={`module-icon tint-${index+1}`}><Icon size={18}/></span><strong>{label}</strong><span className="module-caption">목록 및 등록</span><span className="module-arrow">→</span></button>)}<button className="module-card module-card-button" onClick={() => navigate('/subjects')}><span className="module-icon tint-4"><BookOpen size={18}/></span><strong>과목</strong><span className="module-caption">과목 목록 및 관리</span><span className="module-arrow">→</span></button><button className="module-card module-card-button" onClick={() => navigate('/enrollments')}><span className="module-icon tint-2"><GraduationCap size={18}/></span><strong>수강 등록</strong><span className="module-caption">학생과 수업 연결</span><span className="module-arrow">→</span></button><button className="module-card module-card-button" onClick={() => navigate('/lesson-logs')}><span className="module-icon tint-3"><BookOpen size={18}/></span><strong>수업 일지</strong><span className="module-caption">학생별 학습 기록</span><span className="module-arrow">→</span></button></div></section>
           <footer className="page-footer"><span>© 2026 open-class</span><span><i/> Asia/Seoul 시간대</span></footer></>}
       </div>
     </main>

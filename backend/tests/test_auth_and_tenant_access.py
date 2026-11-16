@@ -61,6 +61,7 @@ def accounts(client):
     admin = add_user(session_factory, "admin@example.com", UserRole.ACADEMY_ADMIN, academy_a_id)
     add_user(session_factory, "teacher-a@example.com", UserRole.TEACHER, academy_a_id)
     add_user(session_factory, "teacher-b@example.com", UserRole.TEACHER, academy_b_id)
+    add_user(session_factory, "admin-b@example.com", UserRole.ACADEMY_ADMIN, academy_b_id)
     add_user(session_factory, "platform@example.com", UserRole.SUPER_ADMIN, None)
     return test_client, admin, academy_a_id, academy_b_id
 
@@ -72,7 +73,7 @@ def login(client: TestClient, email: str, password: str = "local-test-password-1
 
 
 def test_login_session_and_logout(accounts):
-    client, admin, academy_a_id, _ = accounts
+    client, admin, academy_a_id, _, *_ = accounts
     login(client, "admin@example.com")
     me = client.get("/api/v1/auth/me")
     assert me.status_code == 200
@@ -91,7 +92,7 @@ def test_login_rejects_invalid_credentials(accounts):
 
 
 def test_academy_admin_user_list_and_create_stay_in_tenant(accounts):
-    client, _, academy_a_id, academy_b_id = accounts
+    client, _, academy_a_id, academy_b_id, *_ = accounts
     login(client, "admin@example.com")
 
     listed = client.get(f"/api/v1/users?academy_id={academy_b_id}")
@@ -146,7 +147,7 @@ def create_login_account(client: TestClient, role: str, email: str, name: str) -
 
 
 def test_student_profile_is_tenant_scoped_and_private(accounts):
-    client, _, academy_a_id, academy_b_id = accounts
+    client, _, academy_a_id, academy_b_id, *_ = accounts
     login(client, "admin@example.com")
     student_user = create_login_account(client, "STUDENT", "new-student@example.com", "새 학생")
     student = client.post("/api/v1/students", json={
@@ -167,7 +168,7 @@ def test_student_profile_is_tenant_scoped_and_private(accounts):
 
 
 def test_course_enrollment_and_teacher_student_visibility(accounts):
-    client, _, academy_a_id, _ = accounts
+    client, _, academy_a_id, _, *_ = accounts
     login(client, "admin@example.com")
     teacher = client.post("/api/v1/teachers", json={
         "email": "new-teacher@example.com",
@@ -205,7 +206,7 @@ def test_course_enrollment_and_teacher_student_visibility(accounts):
 
 
 def test_schedule_overlap_generation_attendance_and_session_visibility(accounts):
-    client, _, _, _ = accounts
+    client, _, _, _, *_ = accounts
     login(client, "admin@example.com")
     teacher_user = create_login_account(client, "TEACHER", "schedule-teacher@example.com", "시간표 선생님")
     teacher = client.post("/api/v1/teachers", json={"user_id": teacher_user["id"]})
@@ -246,6 +247,28 @@ def test_schedule_overlap_generation_attendance_and_session_visibility(accounts)
     assert client.patch(f"/api/v1/lesson-sessions/{session['id']}/status", json={"status": "IN_PROGRESS"}).status_code == 200
     assert client.patch(f"/api/v1/lesson-sessions/{session['id']}/status", json={"status": "COMPLETED"}).status_code == 200
 
+    log_payload = {
+        "lesson_session_id": session["id"], "student_id": student.json()["id"],
+        "subject": "탐구 보고서", "lesson_content": "관찰 결과를 표로 정리했습니다.",
+        "progress_content": "실험 설계와 변수 통제", "understanding_level": 4,
+        "homework": "관찰 내용을 한 문단으로 요약하기", "feedback": "근거를 잘 찾았어요.",
+        "next_plan": "결과를 바탕으로 결론 작성",
+    }
+    lesson_log = client.post("/api/v1/lesson-logs", json=log_payload)
+    assert lesson_log.status_code == 201, lesson_log.text
+    assert lesson_log.json()["understanding_level"] == 4
+    assert client.post("/api/v1/lesson-logs", json=log_payload).status_code == 409
+    updated = client.patch(f"/api/v1/lesson-logs/{lesson_log.json()['id']}", json={"feedback": "근거와 설명이 좋아요."})
+    assert updated.status_code == 200
+
     login(client, "schedule-student@example.com", "another-test-password-123")
     own_sessions = client.get("/api/v1/lesson-sessions?start_date=2026-11-16&end_date=2026-11-22")
     assert [row["id"] for row in own_sessions.json()] == [session["id"]]
+    own_logs = client.get("/api/v1/lesson-logs?start_date=2026-11-16&end_date=2026-11-22")
+    assert [row["id"] for row in own_logs.json()] == [lesson_log.json()["id"]]
+    assert client.patch(f"/api/v1/lesson-logs/{lesson_log.json()['id']}", json={"feedback": "학생 수정"}).status_code == 403
+
+    login(client, "admin-b@example.com")
+    other_academy_logs = client.get("/api/v1/lesson-logs?start_date=2026-11-16&end_date=2026-11-22")
+    assert other_academy_logs.status_code == 200
+    assert other_academy_logs.json() == []
