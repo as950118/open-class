@@ -1,16 +1,27 @@
 import uuid
 
 import pytest
+from pydantic import ValidationError
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.config import Settings
 from app.core.security import hash_password
 from app.main import app
 from app.models.academy import Academy
 from app.models.user import User, UserRole
+
+
+def test_production_settings_reject_development_jwt_key_and_invalid_expiry():
+    with pytest.raises(ValidationError):
+        Settings(app_env="production")
+    with pytest.raises(ValidationError):
+        Settings(jwt_expiration_hours=0)
+    production = Settings(app_env="production", jwt_secret_key="production-test-secret-that-is-long-enough")
+    assert production.app_env == "production"
 
 
 @pytest.fixture
