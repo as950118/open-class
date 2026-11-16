@@ -260,6 +260,15 @@ def test_schedule_overlap_generation_attendance_and_session_visibility(accounts)
     assert client.post("/api/v1/lesson-logs", json=log_payload).status_code == 409
     updated = client.patch(f"/api/v1/lesson-logs/{lesson_log.json()['id']}", json={"feedback": "근거와 설명이 좋아요."})
     assert updated.status_code == 200
+    teacher_dashboard = client.get("/api/v1/dashboard")
+    assert teacher_dashboard.status_code == 200, teacher_dashboard.text
+    assert teacher_dashboard.json()["today_scheduled"] == 1
+    assert teacher_dashboard.json()["today_logs"] == 1
+    assert teacher_dashboard.json()["today_missing_logs"] == 0
+    teacher_search = client.get("/api/v1/search?q=과학")
+    assert teacher_search.status_code == 200, teacher_search.text
+    assert teacher_search.json()["courses"][0]["title"] == "과학 탐구"
+    assert len(teacher_search.json()["lesson_logs"]) == 1
 
     login(client, "schedule-student@example.com", "another-test-password-123")
     own_sessions = client.get("/api/v1/lesson-sessions?start_date=2026-11-16&end_date=2026-11-22")
@@ -267,8 +276,15 @@ def test_schedule_overlap_generation_attendance_and_session_visibility(accounts)
     own_logs = client.get("/api/v1/lesson-logs?start_date=2026-11-16&end_date=2026-11-22")
     assert [row["id"] for row in own_logs.json()] == [lesson_log.json()["id"]]
     assert client.patch(f"/api/v1/lesson-logs/{lesson_log.json()['id']}", json={"feedback": "학생 수정"}).status_code == 403
+    student_search = client.get("/api/v1/search?q=과학")
+    assert student_search.status_code == 200
+    assert student_search.json()["courses"][0]["title"] == "과학 탐구"
 
     login(client, "admin-b@example.com")
     other_academy_logs = client.get("/api/v1/lesson-logs?start_date=2026-11-16&end_date=2026-11-22")
     assert other_academy_logs.status_code == 200
     assert other_academy_logs.json() == []
+    other_dashboard = client.get("/api/v1/dashboard")
+    assert other_dashboard.status_code == 200
+    assert other_dashboard.json()["today_scheduled"] == 0
+    assert client.get("/api/v1/search?q=과학").json()["courses"] == []
