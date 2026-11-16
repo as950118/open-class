@@ -22,7 +22,7 @@ function displayDate(value: string) { return new Intl.DateTimeFormat('ko-KR', { 
 export default function LessonLogsPage({ role }: { role: string }) {
   const queryClient = useQueryClient()
   const canWrite = role === 'ACADEMY_ADMIN' || role === 'SUPER_ADMIN' || role === 'TEACHER'
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '')
   const [studentId, setStudentId] = useState('')
   const [teacherId, setTeacherId] = useState('')
   const [courseId, setCourseId] = useState('')

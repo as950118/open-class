@@ -9,3 +9,4 @@ Copy `docs/task-template.md` for each work item.
 | TASK-0003 | Academy data management | Done | [TASK-0003](TASK-0003-academy-data.md) |
 | TASK-0004 | Recurring schedules and lesson sessions | Done | [TASK-0004](TASK-0004-schedules-and-sessions.md) |
 | TASK-0005 | Student lesson logs | Done | [TASK-0005](TASK-0005-lesson-logs.md) |
+| TASK-0006 | Search and dashboard | Done | [TASK-0006](TASK-0006-search-dashboard.md) |
